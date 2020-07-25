@@ -1,42 +1,47 @@
 import React from 'react';
+import { ReactiveState } from './reactiveState';
 
 const ViewStyle: React.CSSProperties = { textAlign: 'center', padding: '50px' };
 
-// Actions for reducer
-enum EnumReducerActions {
-  IncrementOne = "incrementOne",
-  IncrementTwo = "incrementTwo",
-};
+function useInc1(): number | undefined {
+  const [value, setValue] = React.useState<number>();
+  const context = React.useContext(IncrementContext);
+  React.useEffect(() => {
+    const id = context.inc1.addReaction(() => setValue(context.inc1.getValue()));
+    return () => context.inc1.removeReaction(id);
+  });
+  return value;
+}
 
-// Context Value
-const IncrementContextDefault = {
-  incrementOne: 0,
-  incrementTwo: 0,
-  dispatch: (action: EnumReducerActions) => { }
-};
-
-// State for the reducer
-type TypeReducerState = Omit<typeof IncrementContextDefault, 'dispatch'>;
+function useInc2(): number | undefined {
+  const [value, setValue] = React.useState<number>();
+  const context = React.useContext(IncrementContext);
+  React.useEffect(() => {
+    const id = context.inc2.addReaction(() => setValue(context.inc2.getValue()));
+    return () => context.inc2.removeReaction(id);
+  });
+  return value;
+}
 
 // Context
-const IncrementContext = React.createContext(IncrementContextDefault);
+const IncrementContext = React.createContext(ReactiveState);
 
 function IncrementOneView() {
-  const context = React.useContext(IncrementContext);
+  const inc1 = useInc1();
   console.count('IncrementOneView');
   return (
     <div>
-      Increment One : {context.incrementOne}
+      Increment One : {inc1}
     </div>
   );
 }
 
 function IncrementTwoView() {
-  const context = React.useContext(IncrementContext);
+  const inc2 = useInc2();
   console.count("IncrementTwoView");
   return (
     <div>
-      Increment Two : {context.incrementTwo}
+      Increment Two : {inc2}
     </div>
   );
 }
@@ -47,7 +52,7 @@ function IncrementOneButton() {
   return (
     <div>
       <button
-        onClick={() => context.dispatch(EnumReducerActions.IncrementOne)}
+        onClick={() => context.increment1()}
       >
         Increment One
       </button>
@@ -61,7 +66,7 @@ function IncrementTwoButton() {
   return (
     <div>
       <button
-        onClick={() => context.dispatch(EnumReducerActions.IncrementTwo)}
+        onClick={() => context.increment2()}
       >
         Increment Two
       </button>
@@ -70,19 +75,9 @@ function IncrementTwoButton() {
 }
 
 function App() {
-  const [state, dispatch] = React.useReducer<React.Reducer<TypeReducerState, EnumReducerActions>>(
-    (state, action) => {
-      switch (action) {
-        case EnumReducerActions.IncrementOne: return { ...state, incrementOne: state.incrementOne + 1 };
-        case EnumReducerActions.IncrementTwo: return { ...state, incrementTwo: state.incrementTwo + 1 };
-        default: return state;
-      }
-    },
-    IncrementContextDefault,
-  )
   console.count('App');
   return (
-    <IncrementContext.Provider value={{ ...state, dispatch }}>
+    <IncrementContext.Provider value={ReactiveState}>
       <div style={ViewStyle}>
         <IncrementOneView />
         <IncrementTwoView />
